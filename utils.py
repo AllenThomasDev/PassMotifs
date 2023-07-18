@@ -6,7 +6,7 @@ def get_team_records(df):
     return df[df['team'] == team1][pass_columns].to_dict('records'), df[df['team'] == team2][pass_columns].to_dict('records')
 
 
-def create_pass_sequences_from_pass_events(records, threshold=5):
+def create_possession_sequences_from_pass_events(records, threshold=5):
     """Records is a list of records made like this ->
     sb.events(match_id=15986, split=True, flatten_attrs=True)["passes"].to_dict('records')
     threshold is number of seconds after which a pass is considered separate from a pass sequence"""

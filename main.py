@@ -16,8 +16,8 @@ def main():
   threshold = 5
   df = sb.events(match_id=15986, split=True, flatten_attrs=True)["passes"]
   team_1_records, team_2_records = get_team_records(df)
-  team_1_pass_sequences = create_pass_sequences_from_pass_events(team_1_records, threshold)
-  team_2_pass_sequences = create_pass_sequences_from_pass_events(team_2_records, threshold)
+  team_1_pass_sequences = create_possession_sequences_from_pass_events(team_1_records, threshold)
+  team_2_pass_sequences = create_possession_sequences_from_pass_events(team_2_records, threshold)
   print(len(team_1_pass_sequences),len(team_2_pass_sequences))
 
 if __name__ == "__main__":
