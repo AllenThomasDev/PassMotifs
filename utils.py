@@ -1,9 +1,11 @@
-def get_team_records(df):
-    team1, team2 = list(df['team'].unique())
+import plotly.graph_objects as go
+
+
+def get_team_records(df, team):
     df['mod_time'] = df['minute']*60 + df['second']
     pass_columns = ['player', 'pass_recipient', 'location',
                     'pass_length', 'pass_end_location', 'timestamp', 'mod_time']
-    return df[df['team'] == team1][pass_columns].to_dict('records'), df[df['team'] == team2][pass_columns].to_dict('records')
+    return df[df['team'] == team][pass_columns].to_dict('records')
 
 
 def create_possession_sequences_from_pass_events(records, threshold=5):
@@ -118,30 +120,30 @@ statsbomb_competitions = {'Champions League': ['2018/2019',
                           "UEFA Women's Euro": ['2022'],
                           "Women's World Cup": ['2019']}
 
-season_name_to_ids = {'1999/2000': 76,
-                      '2003/2004': 44,
-                      '2004/2005': 37,
-                      '2005/2006': 38,
-                      '2006/2007': 39,
-                      '2007/2008': 40,
-                      '2008/2009': 41,
-                      '2009/2010': 21,
-                      '2010/2011': 22,
-                      '2011/2012': 23,
-                      '2012/2013': 24,
-                      '2013/2014': 25,
-                      '2014/2015': 26,
-                      '2015/2016': 27,
-                      '2016/2017': 2,
-                      '2017/2018': 1,
-                      '2018': 3,
-                      '2018/2019': 4,
-                      '2019': 30,
-                      '2019/2020': 42,
-                      '2020': 43,
-                      '2020/2021': 90,
-                      '2021/2022': 108,
-                      '2022': 106}
+season_name_to_id = {'1999/2000': 76,
+                     '2003/2004': 44,
+                     '2004/2005': 37,
+                     '2005/2006': 38,
+                     '2006/2007': 39,
+                     '2007/2008': 40,
+                     '2008/2009': 41,
+                     '2009/2010': 21,
+                     '2010/2011': 22,
+                     '2011/2012': 23,
+                     '2012/2013': 24,
+                     '2013/2014': 25,
+                     '2014/2015': 26,
+                     '2015/2016': 27,
+                     '2016/2017': 2,
+                     '2017/2018': 1,
+                     '2018': 3,
+                     '2018/2019': 4,
+                     '2019': 30,
+                     '2019/2020': 42,
+                     '2020': 43,
+                     '2020/2021': 90,
+                     '2021/2022': 108,
+                     '2022': 106}
 
 
 competition_name_to_id = {'Champions League': 16,
@@ -154,3 +156,60 @@ competition_name_to_id = {'Champions League': 16,
                           'UEFA Euro': 55,
                           "UEFA Women's Euro": 53,
                           "Women's World Cup": 72}
+
+
+def football_match_to_table(match_row):
+    """Converts a football match row into a neat table with home team stats in one column and corresponding away team stats in another column.
+
+    Args:
+      match_row: A Pandas DataFrame row containing the data of a football match.
+
+    Returns:
+      A string containing the table.
+    """
+    home_team_stats = [match_row[x]
+                       for x in ['home_team', 'home_score', 'home_managers']]
+    away_team_stats = [match_row[x]
+                       for x in ['away_team', 'away_score', 'away_managers']]
+    team_names = match_row['home_team'], match_row['away_team']
+    team_scores = match_row['home_score'], match_row['away_score']
+    return [team_names, team_scores]
+
+
+def df_to_pass_flow(df, team, threshold):
+    team_pass_events = get_team_records(df, team)
+    team_pass_sequences = create_possession_sequences_from_pass_events(
+        team_pass_events, threshold)
+    l = []
+    for subpossession in team_pass_sequences:
+        three_pass_sequences = extract_three_pass_sub_possessions(
+            subpossession)
+        for sequence in three_pass_sequences:
+            flow = get_flow_for_sequence(sequence)
+            l.append(convert_pass_flow(flow))
+    filtered_flows = [
+        flow for flow in l if (("AA" not in flow) and ("BB" not in flow) and ("CC" not in flow))]
+    return filtered_flows
+
+
+
+def flow_to_chart(flow, team_name):
+    fig = go.Pie(
+        values=flow['vals'],
+        labels=flow['keys'],
+        name='Motif distribution',  # This name will be displayed in the legend
+        showlegend=True,  # Set showlegend to True to display the legend
+    )
+
+    layout = go.Layout(
+        title="Pass Motif distribution for " + team_name,
+        legend=dict(
+            orientation="v",  # "v" stands for vertical, which places the legend on the left
+            x=0,  # Adjust the x position to control the distance from the left edge
+            y=1,   # Adjust the y position to control the vertical centering
+        ),
+    )
+    fig = go.Figure(data=[fig], layout=layout)
+
+    return fig
+
